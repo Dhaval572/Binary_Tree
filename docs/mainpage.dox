@@ -1,0 +1,219 @@
+/**
+ * @mainpage BinaryTree API Documentation
+ *
+ * @section intro Overview
+ *
+ * <b>BinaryTree</b> is a header-only C++20 binary tree with two properties
+ * usually kept apart:
+ *
+ * - <b>Speed</b>: nodes live inline in one contiguous slot array — no
+ *   per-node heap allocation, cache-friendly walks.
+ * - <b>Safety</b>: node references are generational handles, not raw
+ *   pointers — stale, foreign, and out-of-range references are detected
+ *   and rejected instead of dereferenced.
+ *
+ * Single header: @c include/binary_tree/binary_tree.hpp. Namespace
+ * @c binary_tree. No dependencies beyond the C++20 standard library.
+ *
+ * @section quickstart Quick start
+ *
+ * @code{.cpp}
+ * #include <binary_tree/binary_tree.hpp>
+ * #include <iostream>
+ *
+ * int main()
+ * {
+ *     binary_tree::BinaryTree<int> tree;
+ *
+ *     if (auto st = tree.EmplaceRoot(10);
+ *         !std::holds_alternative<std::monostate>(st))
+ *     {
+ *         return 1; // never ignore mutation results
+ *     }
+ *     auto root = tree.Root();
+ *     if (!root)                       // never use handles unchecked
+ *         return 1;
+ *
+ *     tree.EmplaceLeft(root, 5);       // check in production code
+ *     tree.EmplaceRight(root, 15);
+ *
+ *     tree.InOrder([](const int &v) { std::cout << v << ' '; });
+ *     // prints: 5 10 15
+ *
+ *     if (auto left = tree.Left(root); left)
+ *         if (int *pv = tree.Value(left))
+ *             *pv = 6;                 // handle -> value
+ * }
+ * @endcode
+ *
+ * @section safety Safety problems this design solves
+ *
+ * Classic raw-pointer node trees fail in ways that are silent until they
+ * crash. This library removes each failure mode structurally:
+ *
+ * - @b Dangling @b node @b pointers after @b growth or @b erase.
+ *   Pointers into a moving container (or a freed node) are undefined
+ *   behavior on use. Here handles address slots by 32-bit index —
+ *   storage growth relocates nodes, handles keep resolving. @see
+ *   binary_tree::BinaryTree::IsValid
+ *
+ * - @b Stale @b handles @b after @b slot @b reuse. A handle to a recycled
+ *   node would alias unrelated data. Every slot carries a 64-bit
+ *   generation; recycling bumps it, so old handles fail validation.
+ *   Generation wraparound is blocked — a retired slot is never silently
+ *   resurrected. @see binary_tree::TreeError
+ *
+ * - @b Cross-tree @b handle @b mixups. Passing a handle from tree A to
+ *   tree B would corrupt or read the wrong storage. Each handle embeds
+ *   its tree id; mismatched ids are rejected (@c InvalidParent, @c
+ *   nullptr, @c false — no undefined behavior).
+ *
+ * - @b Out-of-bounds @b slot @b access. Every resolve bounds-checks the
+ *   index before touching storage.
+ *
+ * - @b Silently @b ignored @b failed @b insertions. Functions that
+ *   "return bool you forgot to check" hide bugs. Every mutation returns
+ *   a status variant carrying a specific @ref binary_tree::TreeError
+ *   (@c RootAlreadyExists, @c InvalidParent, @c ChildAlreadyExists).
+ *
+ * - @b Accidental @b copies @b / @b double @b frees. Copy construction
+ *   and copy assignment are deleted; ownership moves explicitly and
+ *   @c noexcept. Self-move-assignment is a safe no-op.
+ *
+ * - @b Dangling @b value @b pointers. Value() pointers follow
+ *   `std::vector` reallocation rules and the contract is documented at
+ *   the API; handles are the always-safe path, and Reserve() removes
+ *   reallocation entirely when the final size is known.
+ *
+ * - @b Broken @b move-only @b payloads. Slot storage relocates nodes
+ *   with moves only — types such as @c std::unique_ptr work (covered by
+ *   tests), no default construction required.
+ *
+ * All of the above is enforced by 28 unit tests including a storage
+ * contiguity audit, a 10 000-node growth audit, and move-only
+ * reallocation sweeps, run under AddressSanitizer and UBSan.
+ *
+ * @section contracts Contracts and requirements
+ *
+ * - @b Type @b requirements: @p T must be move- or copy-insertable.
+ *   Move-only supported, default-construction not required.
+ * - @b Pointer @b lifetime: pointers from Value() die when an insertion
+ *   grows storage; handles never die from insertion. Reserve(count)
+ *   freezes growth for known sizes.
+ * - @b Threading: concurrent const usage (traversals, Value(), IsValid())
+ *   is safe; any mutation needs exclusive external access to the tree.
+ * - @b Errors: no exceptions from library logic; failures arrive as
+ *   return values. Only @p T construction and allocation can throw.
+ *
+ * @section pitfalls Pitfalls — what to avoid
+ *
+ * Bad handles never cause undefined behavior here — but they fail
+ * calls, and failed calls do nothing. Watch for these traps:
+ *
+ * @warning Always check handles before use. Root(), Left(), and
+ * Right() return a null handle when the tree is empty, the child
+ * slot is empty, or the parent handle is stale or foreign. An
+ * unchecked handle passed onward produces an error result or a null
+ * pointer — the program keeps running while your logic silently
+ * skips work. Test with `if (handle)` or @c IsValid(handle) first.
+ * @see binary_tree::BinaryTree::IsValid
+ *
+ * Insertions fail just as quietly:
+ *
+ * @warning Always check insertion results. EmplaceRoot(),
+ * EmplaceLeft(), and EmplaceRight() return a status variant.
+ * Ignoring it hides @c RootAlreadyExists, @c InvalidParent, and
+ * @c ChildAlreadyExists — the classic "insert failed but my code
+ * kept going" bug. Branch on the result:
+ * `std::holds_alternative<std::monostate>(status)`.
+ *
+ * Raw pointers are the second trap:
+ *
+ * @warning Never keep a pointer from Value() across insertions.
+ * Pointers follow `std::vector` reallocation rules: a growing
+ * insertion invalidates every outstanding pointer. Re-fetch after
+ * mutations, or call Reserve() up front when the final size is
+ * known. Handles are never invalidated by insertion — prefer them
+ * as the long-lived reference. @see binary_tree::BinaryTree::Value
+ *
+ * Threading is your responsibility:
+ *
+ * @warning Never mutate the tree while other threads read it. There
+ * is no internal locking: a concurrent traversal plus an insertion
+ * is a data race. Const operations (traversals, Value(), IsValid())
+ * may run in parallel; any mutation needs exclusive external
+ * access.
+ *
+ * Handles live inside one process only:
+ *
+ * @attention Never persist or send handles. Tree ids come from an
+ * in-process counter — a handle is meaningful only inside the
+ * process (and tree) that issued it. Do not write handles to disk,
+ * put them in files, or compare them across processes or runs.
+ * Persist values or your own indices instead.
+ *
+ * Cross-tree mixups are detected, not fatal:
+ *
+ * @note A handle from another tree is rejected, not undefined
+ * behavior — but receiving one means a caller bug. Check which
+ * tree issued the handle; foreign handles fail IsValid() with a
+ * specific error, never a crash.
+ *
+ * Ownership is explicit:
+ *
+ * @note Move, don't copy: copy construction and copy assignment are
+ * deleted. After a move, previously issued handles keep resolving
+ * inside the new owner (the tree id travels with the data); the
+ * moved-from tree receives a fresh id, so its old handles die.
+ * Self-move-assignment is a safe no-op.
+ *
+ * Throwing constructors leave nothing half-built:
+ *
+ * @note Exceptions leave the tree intact. Only @p T construction
+ * and allocation (`std::bad_alloc`) can throw; if they do, no link
+ * is written and Size() does not move. At worst one unused empty
+ * slot remains — traversals skip it.
+ *
+ * Capacity only grows:
+ *
+ * @note Reserve() never shrinks. Capacity may exceed Size() for
+ * the tree's lifetime; that wastes nothing observable. Pointers
+ * fetched before Reserve() may die if Reserve() itself reallocates
+ * — re-fetch once after it.
+ *
+ * @section commands Building and generating docs
+ *
+ * @code{.sh}
+ * make setup       # dependencies (vcpkg) + Debug build
+ * make test        # unit tests (ASan/UBSan)
+ * make benchmark   # Release benchmarks
+ * make docs        # this documentation (Doxygen via vcpkg)
+ * @endcode
+ *
+ * Cross-platform (Windows/macOS included), same CMake targets:
+ *
+ * @code{.sh}
+ * cmake --preset debug
+ * cmake --build --preset debug
+ * ctest --preset debug
+ * cmake --build --preset debug --target docs
+ * @endcode
+ *
+ * Doxygen itself is installed automatically by vcpkg through the
+ * project overlay port @c ports/doxygen — no manual tool setup.
+ *
+ * @section arch Storage architecture (why it is fast)
+ *
+ * @code
+ * m_Slots:       [ optional<Node<T>> | optional<Node<T>> | ... ]  contiguous
+ * m_Generations: [ u64                | u64                | ... ]  parallel 1:1
+ * m_FreeSlots:   recycled indices (prepared for future deletion)
+ *
+ * NodeHandle = { u32 index, u64 generation, u64 tree_id }
+ * @endcode
+ *
+ * Resolution is index arithmetic plus one load — no pointer chase to a
+ * separately allocated node. Traversal streams pure node data; the
+ * generation array stays out of the hot path and is touched only by
+ * validation.
+ */

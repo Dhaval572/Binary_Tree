@@ -1,0 +1,76 @@
+# Doxygen configuration for BinaryTree.
+# This file is a CMake template: @VAR@ substitutions happen at configure time.
+# Generate docs with: cmake --build <preset> --target docs
+# Warnings are errors: the build fails until every public API is documented.
+
+PROJECT_NAME           = "BinaryTree"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+PROJECT_BRIEF          = "Header-only C++20 binary tree library"
+OUTPUT_DIRECTORY       = @BINARY_TREE_DOCS_OUTPUT_DIR@
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 4
+
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+SHOW_HEADERFILE        = YES
+SHOW_INCLUDE_FILES     = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+
+INPUT                  = "@PROJECT_SOURCE_DIR@/include" "@PROJECT_SOURCE_DIR@/docs"
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.hpp *.h *.hh *.hxx *.dox
+RECURSIVE              = YES
+EXCLUDE                = "@PROJECT_SOURCE_DIR@/docs/theme"
+EXCLUDE_SYMBOLS        = binary_tree::detail*
+
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
+
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+ALPHABETICAL_INDEX     = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_HEADER            = @PROJECT_SOURCE_DIR@/docs/theme/header.html
+HTML_EXTRA_STYLESHEET  = "@PROJECT_SOURCE_DIR@/docs/theme/doxygen-awesome.css" "@PROJECT_SOURCE_DIR@/docs/theme/kde-polish.css"
+HTML_EXTRA_FILES       = "@PROJECT_SOURCE_DIR@/docs/theme/doxygen-awesome-darkmode-toggle.js" "@PROJECT_SOURCE_DIR@/docs/theme/doxygen-awesome-fragment-copy-button.js" "@PROJECT_SOURCE_DIR@/docs/theme/doxygen-awesome-paragraph-link.js" "@PROJECT_SOURCE_DIR@/docs/theme/doxygen-awesome-interactive-toc.js"
+HTML_COLORSTYLE        = LIGHT
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+
+HAVE_DOT               = @BINARY_TREE_DOXYGEN_HAVE_DOT@
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+GROUP_GRAPHS           = YES
+UML_LOOK               = NO
+TEMPLATE_RELATIONS     = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_GRAPH_MAX_NODES    = 50
+MAX_DOT_GRAPH_DEPTH    = 0

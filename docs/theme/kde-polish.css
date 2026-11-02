@@ -1,0 +1,623 @@
+/*
+ * kde-polish.css — KDE Breeze-inspired layer over doxygen-awesome-css.
+ * Loaded after doxygen-awesome.css (see HTML_EXTRA_STYLESHEET).
+ */
+
+/* ---------- palette: light (default) ---------- */
+html {
+    --k-accent: #2980b9;
+    --k-accent-bright: #3daee9;
+    --k-accent-ink: #1a6fb5;
+    --k-text: #232629;
+    --k-text-2: #6d6f73;
+    --k-border: #e3e7ea;
+    --k-border-soft: #edf1f4;
+    --k-surface: #ffffff;
+    --k-surface-2: #f5f7f9;
+    --k-surface-3: #eef3f7;
+    --k-code-bg: #f6f8fb;
+    --k-code-inline-bg: #eef2f5;
+    --k-code-inline-ink: #2f4153;
+    --k-card-title-bg: #f5f9fc;
+    --k-head-top: #f2f9fd;
+    --k-row-hover: #eef7fd;
+    --k-row-zebra: #f8fafc;
+    --k-sel-bg: #e3f2fc;
+    --k-sel-ink: #17486b;
+    --k-warn-bg: #fdf4e3;
+    --k-warn-edge: #f67400;
+    --k-warn-ink: #6b4a00;
+    --k-warn-ink-strong: #b35400;
+    --k-note-bg: #e9f6fe;
+    --k-note-edge: #2980b9;
+    --k-note-ink: #1f4e70;
+    --k-note-ink-strong: #1879c4;
+    --k-shadow: 0 1px 3px rgba(35, 38, 41, 0.08);
+    --k-shadow-lift: 0 4px 14px rgba(35, 38, 41, 0.10);
+
+    /* Map Doxygen variables */
+    --page-background-color: var(--k-surface);
+    --nav-background-color: var(--k-surface-2);
+    --nav-tree-background-color: var(--k-surface);
+    --nav-tree-foreground-color: var(--k-text);
+    --nav-path-background-color: var(--k-surface-2);
+    --side-nav-background: var(--k-surface-2);
+    --side-nav-foreground: var(--k-text);
+    --code-background: var(--k-code-inline-bg);
+    --code-foreground: var(--k-code-inline-ink);
+    --fragment-background: var(--k-code-bg);
+    --fragment-foreground: var(--k-text);
+    --fragment-border-color: var(--k-border);
+    --tablehead-background: var(--k-surface-3);
+    --tablehead-foreground: var(--k-text);
+    --blockquote-background: var(--k-surface-2);
+    --blockquote-foreground: var(--k-text);
+
+    --primary-color: var(--k-accent);
+    --primary-dark-color: #1d4f76;
+    --primary-light-color: #7ec2ea;
+    --page-foreground-color: var(--k-text);
+    --page-secondary-foreground-color: var(--k-text-2);
+    --separator-color: var(--k-border);
+    --odd-color: var(--k-row-zebra);
+    --warning-color: var(--k-warn-bg);
+    --warning-color-dark: var(--k-warn-edge);
+    --warning-color-darker: var(--k-warn-ink);
+    --note-color: var(--k-note-bg);
+    --note-color-dark: var(--k-note-edge);
+    --note-color-darker: var(--k-note-ink);
+    --border-radius-large: 8px;
+    --border-radius-medium: 6px;
+    --border-radius-small: 4px;
+    --box-shadow: var(--k-shadow);
+}
+
+/* ---------- palette: dark (OS preference) ---------- */
+@media (prefers-color-scheme: dark) {
+    html:not(.light-mode) {
+        color-scheme: dark;
+        
+        --k-accent: #58b6ef;
+        --k-accent-bright: #3daee9;
+        --k-accent-ink: #8ecdf5;
+        --k-text: #eaedf1;
+        --k-text-2: #9aa5b1;
+        --k-border: #39424e;
+        --k-border-soft: #2f3743;
+        --k-surface: #232a33;
+        --k-surface-2: #2a323d;
+        --k-surface-3: #2f3844;
+        --k-code-bg: #2a323d;
+        --k-code-inline-bg: #333c49;
+        --k-code-inline-ink: #d8dee6;
+        --k-card-title-bg: #2a323d;
+        --k-head-top: #333c49;
+        --k-row-hover: #2f3d4c;
+        --k-row-zebra: rgba(255, 255, 255, 0.03);
+        --k-sel-bg: #24435c;
+        --k-sel-ink: #cfe9fa;
+        --k-warn-bg: #4a3a14;
+        --k-warn-edge: #f67400;
+        --k-warn-ink: #f7dfa8;
+        --k-warn-ink-strong: #ffcf7a;
+        --k-note-bg: #1d3b52;
+        --k-note-edge: #3daee9;
+        --k-note-ink: #cfe7f7;
+        --k-note-ink-strong: #7ec2ea;
+        --k-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        --k-shadow-lift: 0 4px 14px rgba(0, 0, 0, 0.40);
+
+        /* Map Doxygen variables */
+        --page-background-color: var(--k-surface);
+        --nav-background-color: var(--k-surface-2);
+        --nav-tree-background-color: var(--k-surface);
+        --nav-tree-foreground-color: var(--k-text);
+        --nav-path-background-color: var(--k-surface-2);
+        --side-nav-background: var(--k-surface-2);
+        --side-nav-foreground: var(--k-text);
+        --code-background: var(--k-code-inline-bg);
+        --code-foreground: var(--k-code-inline-ink);
+        --fragment-background: var(--k-code-bg);
+        --fragment-foreground: var(--k-text);
+        --fragment-border-color: var(--k-border);
+        --tablehead-background: var(--k-surface-3);
+        --tablehead-foreground: var(--k-text);
+        --blockquote-background: var(--k-surface-2);
+        --blockquote-foreground: var(--k-text);
+
+        --primary-color: var(--k-accent);
+        --page-foreground-color: var(--k-text);
+        --page-secondary-foreground-color: var(--k-text-2);
+        --separator-color: var(--k-border);
+        --warning-color: var(--k-warn-bg);
+        --warning-color-dark: var(--k-warn-edge);
+        --warning-color-darker: var(--k-warn-ink);
+        --note-color: var(--k-note-bg);
+        --note-color-dark: var(--k-note-edge);
+        --note-color-darker: var(--k-note-ink);
+    }
+}
+
+/* ---------- palette: dark (Manual toggle) ---------- */
+html.dark-mode,
+html[data-theme="dark"] {
+    color-scheme: dark;
+    
+    --k-accent: #58b6ef;
+    --k-accent-bright: #3daee9;
+    --k-accent-ink: #8ecdf5;
+    --k-text: #eaedf1;
+    --k-text-2: #9aa5b1;
+    --k-border: #39424e;
+    --k-border-soft: #2f3743;
+    --k-surface: #232a33;
+    --k-surface-2: #2a323d;
+    --k-surface-3: #2f3844;
+    --k-code-bg: #2a323d;
+    --k-code-inline-bg: #333c49;
+    --k-code-inline-ink: #d8dee6;
+    --k-card-title-bg: #2a323d;
+    --k-head-top: #333c49;
+    --k-row-hover: #2f3d4c;
+    --k-row-zebra: rgba(255, 255, 255, 0.03);
+    --k-sel-bg: #24435c;
+    --k-sel-ink: #cfe9fa;
+    --k-warn-bg: #4a3a14;
+    --k-warn-edge: #f67400;
+    --k-warn-ink: #f7dfa8;
+    --k-warn-ink-strong: #ffcf7a;
+    --k-note-bg: #1d3b52;
+    --k-note-edge: #3daee9;
+    --k-note-ink: #cfe7f7;
+    --k-note-ink-strong: #7ec2ea;
+    --k-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --k-shadow-lift: 0 4px 14px rgba(0, 0, 0, 0.40);
+
+    /* Map Doxygen variables */
+    --page-background-color: var(--k-surface);
+    --nav-background-color: var(--k-surface-2);
+    --nav-tree-background-color: var(--k-surface);
+    --nav-tree-foreground-color: var(--k-text);
+    --nav-path-background-color: var(--k-surface-2);
+    --side-nav-background: var(--k-surface-2);
+    --side-nav-foreground: var(--k-text);
+    --code-background: var(--k-code-inline-bg);
+    --code-foreground: var(--k-code-inline-ink);
+    --fragment-background: var(--k-code-bg);
+    --fragment-foreground: var(--k-text);
+    --fragment-border-color: var(--k-border);
+    --tablehead-background: var(--k-surface-3);
+    --tablehead-foreground: var(--k-text);
+    --blockquote-background: var(--k-surface-2);
+    --blockquote-foreground: var(--k-text);
+
+    --primary-color: var(--k-accent);
+    --page-foreground-color: var(--k-text);
+    --page-secondary-foreground-color: var(--k-text-2);
+    --separator-color: var(--k-border);
+    --warning-color: var(--k-warn-bg);
+    --warning-color-dark: var(--k-warn-edge);
+    --warning-color-darker: var(--k-warn-ink);
+    --note-color: var(--k-note-bg);
+    --note-color-dark: var(--k-note-edge);
+    --note-color-darker: var(--k-note-ink);
+}
+
+/* ---------- typography ---------- */
+:root {
+    --font-family: "Noto Sans", Cantarell, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+    --page-font-size: 15.5px;
+    --content-line-height: 26px;
+}
+
+body {
+    color: var(--k-text);
+}
+
+a {
+    color: var(--k-accent);
+}
+
+a:hover {
+    color: var(--k-accent-ink);
+}
+
+::selection {
+    background: rgba(61, 174, 233, 0.35);
+}
+
+/* ---------- title bar ---------- */
+#titlearea {
+    background: var(--k-surface);
+    border-bottom: 1px solid var(--k-border);
+    box-shadow: 0 1px 0 rgba(41, 128, 185, 0.08);
+}
+
+#titlearea #projectname {
+    font-weight: 700;
+    color: var(--k-text);
+    letter-spacing: 0.01em;
+}
+
+#titlearea #projectbrief {
+    color: var(--k-text-2);
+    font-size: 0.92em;
+}
+
+/* ---------- section headings ---------- */
+h2.groupheader,
+h2.groupheader:target {
+    color: var(--k-text);
+    border-bottom: 2px solid rgba(61, 174, 233, 0.55);
+    padding-bottom: 4px;
+    margin-top: 2em;
+}
+
+h3, h4 {
+    color: var(--k-text);
+}
+
+/* ---------- member cards ---------- */
+div.memitem,
+table.memitem,
+td.memitem {
+    background: var(--k-surface);
+    border: 1px solid var(--k-border);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--k-shadow);
+    margin-bottom: 14px;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+div.memitem {
+    overflow: hidden;
+}
+
+div.memitem:hover,
+table.memitem:hover,
+td.memitem:hover {
+    border-color: rgba(61, 174, 233, 0.55);
+    box-shadow: var(--k-shadow-lift);
+}
+
+h2.memtitle {
+    background: var(--k-card-title-bg);
+    color: var(--k-text);
+    border-bottom: 1px solid var(--k-border);
+    border-left: 3px solid var(--k-accent-bright);
+    font-weight: 600;
+    font-size: 1.02em;
+}
+
+div.memproto,
+td.memproto {
+    background: var(--k-surface);
+    border-bottom: 1px solid var(--k-border-soft);
+}
+
+div.memdoc,
+td.memdoc {
+    background: var(--k-surface);
+}
+
+table.memberdecls {
+    background: var(--k-surface);
+    border: 1px solid var(--k-border);
+    border-radius: var(--border-radius-medium);
+    overflow: hidden;
+    box-shadow: var(--k-shadow);
+}
+
+table.memberdecls tr:hover {
+    background: var(--k-row-hover);
+}
+
+table.memberdecls th.tableheader,
+td.tableheader {
+    background: var(--k-surface-3);
+    color: var(--k-text);
+    border-bottom: 2px solid var(--k-accent-bright);
+    font-weight: 600;
+}
+
+/* ---------- code blocks ---------- */
+div.fragment,
+pre.fragment {
+    background: var(--k-code-bg) !important;
+    color: var(--k-text) !important;
+    border: 1px solid var(--k-border) !important;
+    border-radius: var(--border-radius-medium) !important;
+    padding: 12px 16px !important;
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+    position: relative;
+}
+
+/* CATCH ALL INLINE CODE: Destroying Doxygen's default white/yellow box */
+code, tt, samp, kbd, span.pre, div.pre, .pre, 
+body code, body span.pre, body .pre,
+.contents code, .contents span.pre, .contents .pre,
+.textblock code, .textblock span.pre, .textblock .pre,
+.memdoc code, .memdoc span.pre, .memdoc .pre,
+.memproto code, .memproto span.pre, .memproto .pre,
+dl code, dl span.pre, dl .pre,
+dl.section code, dl.section span.pre,
+dl.section.note code, dl.section.note span.pre,
+dl.section.warning code, dl.section.warning span.pre,
+dl.note code, dl.note span.pre,
+dl.warning code, dl.warning span.pre,
+dl.attention code, dl.attention span.pre {
+    background: var(--k-code-inline-bg) !important;
+    background-color: var(--k-code-inline-bg) !important;
+    color: var(--k-code-inline-ink) !important;
+    border: 1px solid var(--k-border-soft) !important;
+    border-radius: 3px !important;
+    padding: 1px 5px !important;
+    font-size: 0.9em !important;
+    box-shadow: none !important;
+    display: inline !important;
+    white-space: pre-wrap !important;
+}
+
+/* Ensure links inside inline code keep the accent color */
+a code, a span.pre, a .pre {
+    color: var(--k-accent) !important;
+}
+
+/* Reset inline code styles inside actual code blocks so syntax highlighting works */
+pre code, pre span.pre, pre .pre,
+.fragment code, .fragment span.pre, .fragment .pre,
+div.line code, div.line span.pre, div.line .pre,
+pre.fragment code, pre.fragment span.pre, pre.fragment .pre,
+div.fragment code, div.fragment span.pre, div.fragment .pre {
+    background: transparent !important;
+    background-color: transparent !important;
+    color: inherit !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+}
+
+/* ---------- markdown tables ---------- */
+table.markdownTable {
+    background: var(--k-surface);
+    border: 1px solid var(--k-border);
+    border-radius: var(--border-radius-medium);
+    overflow: hidden;
+    box-shadow: var(--k-shadow);
+}
+
+table.markdownTable th.markdownTableHead,
+table.markdownTable th.markdownTableHeadNone {
+    background: linear-gradient(180deg, var(--k-head-top), var(--k-surface-3)) !important;
+    color: var(--k-text) !important;
+    border-bottom: 2px solid var(--k-accent-bright) !important;
+    font-weight: 600;
+}
+
+table.markdownTable td {
+    border-bottom: 1px solid var(--k-border-soft);
+    padding: 8px 14px;
+}
+
+table.markdownTable tr.markdownTableRowOdd td {
+    background: var(--k-row-zebra);
+}
+
+table.markdownTable tr:hover td {
+    background: var(--k-row-hover);
+}
+
+/* ---------- admonitions: @warning / @note / @attention / @remark ---------- */
+dl.section.warning,
+dl.section.attention,
+dl.warning,
+dl.attention {
+    background: var(--k-warn-bg) !important;
+    border-left: 8px solid var(--k-warn-edge) !important;
+    color: var(--k-warn-ink) !important;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--k-shadow);
+}
+
+dl.section.warning dt,
+dl.section.attention dt,
+dl.warning dt,
+dl.attention dt {
+    color: var(--k-warn-ink-strong) !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.86em;
+}
+
+dl.section.note,
+dl.section.remark,
+dl.note,
+dl.remark {
+    background: var(--k-note-bg) !important;
+    border-left: 8px solid var(--k-note-edge) !important;
+    color: var(--k-note-ink) !important;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--k-shadow);
+}
+
+dl.section.note dt,
+dl.section.remark dt,
+dl.note dt,
+dl.remark dt {
+    color: var(--k-note-ink-strong) !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.86em;
+}
+
+/* ---------- blockquotes ---------- */
+blockquote {
+    background: var(--k-surface-2) !important;
+    border-left: 4px solid var(--k-accent-bright) !important;
+    border-radius: var(--border-radius-small);
+    color: var(--k-text) !important;
+}
+
+/* ---------- sidebar treeview & TOC ---------- */
+#nav-tree, 
+#nav-tree ul, 
+#nav-tree li, 
+.toc, 
+div.toc,
+.navpath,
+.navpath ul,
+.navpath li {
+    background-color: transparent !important;
+    background-image: none !important;
+    color: var(--k-text) !important;
+}
+
+.contents > .toc {
+    background: var(--k-surface) !important;
+    border: 1px solid var(--k-border) !important;
+    border-radius: var(--border-radius-medium) !important;
+    box-shadow: var(--k-shadow-lift) !important;
+}
+
+.contents > .toc h3 {
+    color: var(--k-text);
+    cursor: pointer;
+}
+
+.contents > .toc a {
+    color: var(--k-text-2);
+    border-radius: var(--border-radius-small);
+}
+
+.contents > .toc a:hover {
+    color: var(--k-accent);
+    background: var(--k-sel-bg);
+}
+
+.contents > .toc a.active {
+    color: var(--k-accent);
+    font-weight: 600;
+}
+
+.contents > .toc a.aboveActive {
+    color: var(--k-accent-ink);
+}
+
+#nav-treeview a {
+    border-radius: var(--border-radius-small);
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+#nav-treeview a:hover {
+    background: var(--k-sel-bg) !important;
+    color: var(--k-accent-ink) !important;
+}
+
+#nav-treeview li.selected > a,
+#nav-treeview li.selected a,
+#nav-tree a.active,
+.toc a.active {
+    background-color: var(--k-accent-bright) !important;
+    color: var(--k-sel-ink) !important;
+    font-weight: 600;
+}
+
+#nav-treeview li.selected > a:hover,
+#nav-treeview li.selected a:hover {
+    background-color: var(--k-accent) !important;
+    color: var(--k-sel-ink) !important;
+}
+
+/* ---------- search box ---------- */
+#searchbox input,
+#searchbox .search-field {
+    background: var(--k-surface-2) !important;
+    border: 1px solid var(--k-border) !important;
+    border-radius: var(--border-radius-small);
+    color: var(--k-text) !important;
+}
+
+#searchbox input:focus {
+    outline: none;
+    border-color: var(--k-accent-bright) !important;
+    box-shadow: 0 0 0 3px rgba(61, 174, 233, 0.25);
+}
+
+/* ---------- theme toggle + copy button ---------- */
+doxygen-awesome-dark-mode-toggle,
+doxygen-awesome-fragment-copy-button {
+    border-radius: var(--border-radius-small);
+}
+
+/* ---------- paragraph anchors ---------- */
+a.anchorlink {
+    color: var(--k-accent-bright) !important;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    margin-left: 6px;
+}
+
+h1:hover a.anchorlink,
+h2:hover a.anchorlink,
+h3:hover a.anchorlink,
+h4:hover a.anchorlink,
+h5:hover a.anchorlink,
+a.anchorlink:focus {
+    opacity: 1;
+}
+
+/* ---------- footer / misc ---------- */
+div.footer {
+    border-top: 1px solid var(--k-border);
+    color: var(--k-text-2);
+    background: var(--k-surface-2);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--k-border);
+}
+
+/* ---------- scrollbars (Breeze-ish) ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c5cdd4;
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aeb9c2;
+    background-clip: content-box;
+    border: 2px solid transparent;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #4a5563;
+    background-clip: content-box;
+    border: 2px solid transparent;
+}
+
+html {
+    scrollbar-color: #c5cdd4 transparent;
+    scrollbar-width: thin;
+}
+
+html.dark-mode,
+html[data-theme="dark"] {
+    scrollbar-color: #4a5563 transparent;
+}

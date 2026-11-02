@@ -1,0 +1,9 @@
+{
+    "name": "binary-tree",
+    "version": "0.1.0",
+    "dependencies": [
+        "doctest",
+        "benchmark",
+        "doxygen"
+    ]
+}

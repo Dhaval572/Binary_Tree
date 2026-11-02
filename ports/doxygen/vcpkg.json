@@ -1,0 +1,7 @@
+{
+    "name": "doxygen",
+    "version": "1.18.0",
+    "description": "Documentation generation tool (official prebuilt binaries, overlay port)",
+    "license": "GPL-2.0-only",
+    "supports": "(x64 & (linux | windows | osx)) | (arm64 & osx)"
+}
