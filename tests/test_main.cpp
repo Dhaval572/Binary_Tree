@@ -1,4 +1,3 @@
-
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
@@ -8,12 +7,34 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 using binary_tree::BinaryTree;
 using binary_tree::TreeError;
+
+namespace
+{
+    // Test payload whose (int) constructor throws when armed.
+    // Copy and move are defaulted; move is noexcept so vector
+    // reallocation during insertion never throws.
+    struct ThrowingValue
+    {
+        static inline bool armed = false;
+        int value;
+
+        explicit ThrowingValue(int v) : value(v)
+        {
+            if (armed)
+                throw std::runtime_error("ThrowingValue");
+        }
+
+        ThrowingValue(const ThrowingValue &)     = default;
+        ThrowingValue(ThrowingValue &&) noexcept = default;
+    };
+} // namespace
 
 // Compile-time API checks
 static_assert(std::is_default_constructible_v<BinaryTree<int>>);
@@ -45,6 +66,9 @@ static_assert(
 
 static_assert(!std::is_convertible_v<BinaryTree<int>::NodeHandle,
                                      BinaryTree<int>::ConstNodeHandle>);
+
+// Tree must be instantiable with types whose move is noexcept
+static_assert(std::is_move_constructible_v<BinaryTree<ThrowingValue>>);
 
 TEST_SUITE("BinaryTree")
 {
@@ -708,17 +732,41 @@ TEST_SUITE("BinaryTree")
         BinaryTree<int> tree;
 
         tree.EmplaceRoot(10);
+        tree.EmplaceLeft(tree.Root(), 5);
+        tree.EmplaceRight(tree.Root(), 15);
 
         auto root = tree.Root();
-
         REQUIRE(root);
+        auto left = tree.Left(root);
+        REQUIRE(left);
+        auto right = tree.Right(root);
+        REQUIRE(right);
 
-        CHECK(tree.Size() == 1);
+        const auto size_before = tree.Size();
+
+        // Intentional self-move: the implementation guards with
+        // `if (this != &other)` and must treat this as a no-op.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-move"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
+#endif
+        tree = std::move(tree);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+        CHECK(tree.Size() == size_before);
         CHECK(tree.IsValid(root));
-
-        REQUIRE(tree.Value(root));
-
+        CHECK(tree.IsValid(left));
+        CHECK(tree.IsValid(right));
         CHECK(*tree.Value(root) == 10);
+        CHECK(*tree.Value(left) == 5);
+        CHECK(*tree.Value(right) == 15);
     }
 
     // Move-only values
@@ -727,9 +775,7 @@ TEST_SUITE("BinaryTree")
         BinaryTree<std::unique_ptr<int>> tree;
 
         auto result = tree.EmplaceRoot(std::make_unique<int>(42));
-
         CHECK(std::holds_alternative<std::monostate>(result));
-
         auto root = tree.Root();
 
         REQUIRE(root);
@@ -766,5 +812,367 @@ TEST_SUITE("BinaryTree")
         tree.EmplaceRight(root, 15);
 
         CHECK(tree.Size() == 3);
+    }
+
+    // ----------------------------------------------------------------
+    // Edge cases: exception safety
+    //
+    // The insertion path is `allocate (may throw) -> commit (no-throw)`.
+    // These tests prove that a throwing `T` constructor leaves the tree
+    // in a consistent, usable state — no half-linked parent, no inflated
+    // Size(), no corrupted root pointer.
+    // ----------------------------------------------------------------
+
+    TEST_CASE("EmplaceRoot leaves tree empty if T's constructor throws")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceRoot(42), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        // Externally observable state is unchanged.
+        CHECK(tree.Empty());
+        CHECK(tree.Size() == 0);
+        CHECK_FALSE(tree.Root());
+        CHECK_FALSE(tree.IsValid(tree.Root()));
+        CHECK(tree.Value(tree.Root()) == nullptr);
+
+        // And the tree remains fully usable.
+        auto result = tree.EmplaceRoot(42);
+        CHECK(std::holds_alternative<std::monostate>(result));
+        CHECK(tree.Size() == 1);
+        auto root = tree.Root();
+        REQUIRE(root);
+        CHECK(tree.Value(root)->value == 42);
+    }
+
+    TEST_CASE("EmplaceLeft leaves parent childless if T's constructor throws")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        tree.EmplaceRoot(10);
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceLeft(root, 20), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        // Parent's left slot must still be empty.
+        CHECK_FALSE(tree.Left(root));
+        CHECK(tree.Size() == 1);
+        CHECK(tree.IsValid(root));
+        CHECK(tree.Value(root)->value == 10);
+
+        // Right slot still works after the failed left insertion.
+        auto right_result = tree.EmplaceRight(root, 30);
+        CHECK(std::holds_alternative<std::monostate>(right_result));
+        CHECK(tree.Size() == 2);
+        auto right = tree.Right(root);
+        REQUIRE(right);
+        CHECK(tree.Value(right)->value == 30);
+    }
+
+    TEST_CASE("EmplaceRight leaves parent childless if T's constructor throws")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        tree.EmplaceRoot(10);
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceRight(root, 20), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        CHECK_FALSE(tree.Right(root));
+        CHECK(tree.Size() == 1);
+
+        // Left slot still works after the failed right insertion.
+        auto left_result = tree.EmplaceLeft(root, 5);
+        CHECK(std::holds_alternative<std::monostate>(left_result));
+        CHECK(tree.Size() == 2);
+    }
+
+    TEST_CASE("Failed emplace preserves all existing handles")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        tree.EmplaceRoot(10);
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        tree.EmplaceLeft(root, 20);
+        auto left = tree.Left(root);
+        REQUIRE(left);
+
+        tree.EmplaceRight(root, 30);
+        auto right = tree.Right(root);
+        REQUIRE(right);
+
+        // Attempt a deeper insertion that throws.
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceLeft(left, 40), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        // All pre-existing handles and values remain valid and correct.
+        CHECK(tree.Size() == 3);
+        CHECK(tree.IsValid(root));
+        CHECK(tree.IsValid(left));
+        CHECK(tree.IsValid(right));
+        CHECK(tree.Value(root)->value == 10);
+        CHECK(tree.Value(left)->value == 20);
+        CHECK(tree.Value(right)->value == 30);
+        CHECK_FALSE(tree.Left(left));
+    }
+
+    TEST_CASE("Repeated throwing insertions leave tree consistent")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceRoot(1), std::runtime_error);
+        CHECK_THROWS_AS(tree.EmplaceRoot(2), std::runtime_error);
+        CHECK_THROWS_AS(tree.EmplaceRoot(3), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        CHECK(tree.Empty());
+        CHECK(tree.Size() == 0);
+
+        auto result = tree.EmplaceRoot(99);
+        CHECK(std::holds_alternative<std::monostate>(result));
+        CHECK(tree.Size() == 1);
+        CHECK(tree.Value(tree.Root())->value == 99);
+    }
+
+    TEST_CASE("Throwing insertion after storage has grown is safe")
+    {
+        BinaryTree<ThrowingValue> tree;
+
+        tree.EmplaceRoot(0);
+        auto parent = tree.Root();
+        REQUIRE(parent);
+
+        // Fill several nodes so the slot vector has non-trivial size.
+        for (int i = 1; i < 20; ++i)
+        {
+            REQUIRE(std::holds_alternative<std::monostate>(
+                tree.EmplaceRight(parent, i)));
+            parent = tree.Right(parent);
+            REQUIRE(parent);
+        }
+
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        // Throw during a subsequent insertion (this exercises the
+        // fresh-slot path in AllocateNode with a non-empty vector).
+        ThrowingValue::armed = true;
+        CHECK_THROWS_AS(tree.EmplaceLeft(root, 999), std::runtime_error);
+        ThrowingValue::armed = false;
+
+        CHECK(tree.Size() == 20);
+        CHECK_FALSE(tree.Left(root));
+        CHECK(tree.Value(root)->value == 0);
+    }
+
+    TEST_CASE("Size only increments on successful insertion")
+    {
+        BinaryTree<int> tree;
+
+        CHECK(tree.Size() == 0);
+
+        CHECK(std::holds_alternative<std::monostate>(tree.EmplaceRoot(10)));
+        CHECK(tree.Size() == 1);
+
+        CHECK(std::holds_alternative<TreeError>(tree.EmplaceRoot(20)));
+        CHECK(tree.Size() == 1);
+
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        CHECK(
+            std::holds_alternative<std::monostate>(tree.EmplaceLeft(root, 5)));
+        CHECK(tree.Size() == 2);
+
+        CHECK(std::holds_alternative<TreeError>(tree.EmplaceLeft(root, 15)));
+        CHECK(tree.Size() == 2);
+    }
+
+    // Edge cases: move semantics
+    TEST_CASE("Move-construct from an empty tree")
+    {
+        BinaryTree<int> source;
+
+        BinaryTree<int> dest(std::move(source));
+
+        CHECK(dest.Empty());
+        CHECK(dest.Size() == 0);
+        CHECK_FALSE(dest.Root());
+
+        CHECK(source.Empty());
+        CHECK(source.Size() == 0);
+    }
+
+    TEST_CASE("Move-assign an empty tree over a non-empty one")
+    {
+        BinaryTree<int> source;
+        BinaryTree<int> dest;
+
+        dest.EmplaceRoot(10);
+        auto old_handle = dest.Root();
+        REQUIRE(old_handle);
+
+        dest = std::move(source);
+
+        CHECK(dest.Empty());
+        CHECK(dest.Size() == 0);
+        CHECK_FALSE(dest.IsValid(old_handle));
+        CHECK_FALSE(dest.Root());
+    }
+
+    TEST_CASE("Handles remain scoped to their tree after a move")
+    {
+        BinaryTree<int> a;
+        BinaryTree<int> b;
+
+        a.EmplaceRoot(10);
+        b.EmplaceRoot(20);
+
+        auto ha = a.Root();
+        auto hb = b.Root();
+        REQUIRE(ha);
+        REQUIRE(hb);
+
+        BinaryTree<int> c(std::move(a));
+
+        CHECK(c.IsValid(ha));       // moved with the data
+        CHECK_FALSE(a.IsValid(ha)); // source's tree id rotated
+        CHECK_FALSE(c.IsValid(hb)); // wrong tree
+        CHECK(b.IsValid(hb));
+    }
+
+    TEST_CASE("Moved-from tree is empty and reusable")
+    {
+        BinaryTree<int> source;
+        source.EmplaceRoot(10);
+        source.EmplaceLeft(source.Root(), 5);
+        auto stale_handle = source.Root();
+        REQUIRE(stale_handle);
+
+        BinaryTree<int> dest(std::move(source));
+
+        CHECK(source.Empty());
+        CHECK(source.Size() == 0);
+
+        // Reuse the moved-from tree; it must be fully functional.
+        auto result = source.EmplaceRoot(100);
+        CHECK(std::holds_alternative<std::monostate>(result));
+        CHECK(source.Size() == 1);
+
+        auto new_root = source.Root();
+        REQUIRE(new_root);
+        CHECK(*source.Value(new_root) == 100);
+
+        // A pre-move handle to the source must not become valid
+        // on the reused source.
+        CHECK_FALSE(source.IsValid(stale_handle));
+    }
+
+    TEST_CASE("Handle works for mutation after move")
+    {
+        BinaryTree<int> source;
+        source.EmplaceRoot(10);
+        auto handle = source.Root();
+        REQUIRE(handle);
+
+        BinaryTree<int> dest(std::move(source));
+
+        // The handle belongs to `dest` now; mutating through it should work.
+        auto result = dest.EmplaceLeft(handle, 20);
+        CHECK(std::holds_alternative<std::monostate>(result));
+        CHECK(dest.Size() == 2);
+
+        auto child = dest.Left(handle);
+        REQUIRE(child);
+        REQUIRE(dest.Value(child));      // pin the failure here
+        CHECK(*dest.Value(child) == 20); // int*, dereference
+    }
+
+    // Edge cases: Reserve() contract
+    TEST_CASE("Reserve keeps Value pointers stable through insertions")
+    {
+        BinaryTree<int> tree;
+        tree.Reserve(100);
+
+        tree.EmplaceRoot(0);
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        auto *p_root = tree.Value(root);
+        REQUIRE(p_root);
+        CHECK(*p_root == 0);
+
+        auto parent = root;
+        for (int i = 1; i < 100; ++i)
+        {
+            REQUIRE(std::holds_alternative<std::monostate>(
+                tree.EmplaceRight(parent, i)));
+            parent = tree.Right(parent);
+            REQUIRE(parent);
+        }
+
+        // No reallocation should have occurred: the root pointer is
+        // still valid and still points at the same value.
+        CHECK(*p_root == 0);
+        CHECK(tree.Size() == 100);
+    }
+
+    // Edge cases: Value() pointer stability, traversal exceptions
+    TEST_CASE("Value returns the same pointer on successive calls")
+    {
+        BinaryTree<int> tree;
+        tree.EmplaceRoot(10);
+        auto root = tree.Root();
+        REQUIRE(root);
+
+        auto *p1 = tree.Value(root);
+        auto *p2 = tree.Value(root);
+        auto *p3 = tree.Value(root);
+
+        REQUIRE(p1);
+        REQUIRE(p2);
+        REQUIRE(p3);
+
+        CHECK(p1 == p2);
+        CHECK(p2 == p3);
+    }
+
+    TEST_CASE("Traversal propagates exceptions from the callback")
+    {
+        BinaryTree<int> tree;
+        tree.EmplaceRoot(10);
+        auto root = tree.Root();
+        REQUIRE(root);
+        tree.EmplaceLeft(root, 5);
+
+        int calls = 0;
+        CHECK_THROWS_AS(tree.InOrder(
+                            [&](const int &)
+                            {
+                                ++calls;
+                                throw std::runtime_error("callback boom");
+                            }),
+                        std::runtime_error);
+
+        // Exactly one call before the exception unwound the recursion.
+        CHECK(calls == 1);
+        
+        // The tree itself is untouched.
+        CHECK(tree.Size() == 2);
+        CHECK(tree.IsValid(root));
+        REQUIRE(tree.Value(root));      // pin the failure here
+        CHECK(*tree.Value(root) == 10); // int*, dereference
     }
 }

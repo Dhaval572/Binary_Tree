@@ -6,6 +6,18 @@ project(BinaryTree
     LANGUAGES CXX
 )
 
+# Single-config generators (Ninja, Unix Makefiles) leave
+# CMAKE_BUILD_TYPE empty unless the user passes -D. Default to
+# Release so `cmake -B build` produces optimized binaries instead
+# of -O0. Multi-config generators (Ninja Multi-Config, VS, Xcode)
+# set the config at build time instead, so we skip them.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING
+        "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        Debug Release RelWithDebInfo MinSizeRel)
+endif()
+
 include(CTest)
 include(GNUInstallDirs)
 
@@ -26,6 +38,11 @@ option(BINARY_TREE_ENABLE_SANITIZERS
 
 option(BINARY_TREE_BUILD_DOCS
     "Build API documentation target"
+    ON
+)
+
+option(BINARY_TREE_BENCHMARK_NATIVE
+    "Build benchmarks with -O3 -march=native (measure peak performance)"
     ON
 )
 
@@ -91,6 +108,26 @@ function(binary_tree_enable_sanitizers target)
 
 endfunction()
 
+# Benchmark tuning: -O3 -march=native in Release builds only.
+# Applied ONLY to the benchmark target — never the INTERFACE
+# library (would leak to consumers) and never the tests (must
+# match production flags).
+function(binary_tree_enable_benchmark_tuning target)
+
+  if(NOT BINARY_TREE_BENCHMARK_NATIVE)
+    return()
+  endif()
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU"
+       AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    target_compile_options(${target} PRIVATE
+            $<$<CONFIG:Release>:-O3>
+            $<$<CONFIG:Release>:-march=native>
+        )
+  endif()
+
+endfunction()
+
 # Tests - doctest
 if(BINARY_TREE_BUILD_TESTS)
 
@@ -134,6 +171,7 @@ if(BINARY_TREE_BUILD_BENCHMARKS)
 
   binary_tree_enable_warnings(binary_tree_benchmarks)
   binary_tree_enable_sanitizers(binary_tree_benchmarks)
+  binary_tree_enable_benchmark_tuning(binary_tree_benchmarks)
 
   # Benchmark execution target
   add_custom_target(run_benchmarks

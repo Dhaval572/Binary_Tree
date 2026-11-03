@@ -13,7 +13,6 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BINARY_TREE_BUILD_TESTS": "ON",
@@ -37,6 +36,15 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BINARY_TREE_ENABLE_SANITIZERS": "OFF"
       }
+    },
+    {
+      "name": "release-bench",
+      "displayName": "Release (benchmarks, native tuning)",
+      "inherits": "release",
+      "cacheVariables": {
+        "BINARY_TREE_BUILD_TESTS": "OFF",
+        "BINARY_TREE_BENCHMARK_NATIVE": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -47,6 +55,11 @@
     {
       "name": "release",
       "configurePreset": "release"
+    },
+    {
+      "name": "release-bench",
+      "configurePreset": "release-bench",
+      "targets": ["binary_tree_benchmarks"]
     }
   ],
   "testPresets": [
